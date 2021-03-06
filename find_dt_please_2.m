@@ -18,8 +18,4 @@ for k = 1:length(alpha_pcm)
     dt(k) = min(dt_all(:,k));
 end
 
-
-
-
-
 end
