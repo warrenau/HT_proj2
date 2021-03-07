@@ -35,11 +35,12 @@ L_pcm = [370, 350, 150]*1000; % pcm latent heat of fusion in J/kg
 alpha_pcm = k_pcm./(rho_pcm.*cp_pcm); % pcm alpha in m^2/s
 Ti = 300; % initial temp in K
 
-h_pcm = k_pcm./(height.*N) .* (2 + 1.1.*(Re_air.^(0.6).*Pr_air.^(1/3))); % convective heat transfer coefficient in W/m^2K
+%h_pcm = k_pcm./(height.*N) .* (2 + 1.1.*(Re_air.^(0.6).*Pr_air.^(1/3))); % convective heat transfer coefficient in W/m^2K
+h_pcm = k_pcm./(height.*N) .* 0.664.*Re_air.^(1/2).*Pr_air^(1/3); % convective heat transfer coefficient in W/m^2K for flat plate
 Bi_pcm = h_pcm .* dx ./ k_pcm; % pcm biot number
 
 %types of salt used 
-salts= [{'Sodium Carbonate-Sodium Carbonate'}, {'Magnesium Chloride-Sodium Chloride '}, {'Potasium Hydroxide'}]; 
+salts= [{'Sodium Carbonate-Lithium Carbonate'}, {'Magnesium Chloride-Sodium Chloride '}, {'Potasium Hydroxide'}]; 
 % find dt
 [dt, dt_all] = find_dt_please_2(dx, alpha_pcm, Bi_pcm);
 %dt = 3600; % manually set dt
@@ -52,6 +53,8 @@ Fo_pcm = k_pcm.*dt./(rho_pcm.*cp_pcm.*dx.^2);
 %% loops!!
 iter = [5e5, 1e5, 1e5];
 t_melt = [0,0,0];
+iter_actual = [4000, 3000, 2000]; % approx actual iteration number for each salt, rounded up
+linspec = {'-k','-.r','--b'};
 
 % outer loop for pcm
 for k = 1:length(rho_pcm)
@@ -60,6 +63,7 @@ for k = 1:length(rho_pcm)
     T = zeros(length(x),length(y))+ Ti;
     q = zeros(length(x), length(y));
     q_pc = zeros(length(x),length(y));
+    T_t = zeros(1,iter_actual(k)); % temp tracking over time
     
     % set Fo, Bi, h,
     Fo = Fo_pcm(k);
@@ -189,6 +193,8 @@ for k = 1:length(rho_pcm)
                 %else
                     %fprintf('Something went wrong with phase change calcs\n')
                     
+                    
+                    
                 end   
                 
                 % if temp is above melting temp and the latent heat is
@@ -200,7 +206,12 @@ for k = 1:length(rho_pcm)
             
             
         end
-    
+        
+        
+        % track temp of center node over time
+                    T_t(i) = T(ceil(length(x)/2),ceil(length(y)));
+                    
+                    
         % break condition for all nodes melting
         if min(q_pc,[],'omitnan') >= L_pcm(k)
             t_melt(k) = dt(k)*i;
@@ -213,15 +224,33 @@ for k = 1:length(rho_pcm)
     end
     %create a heatmap of the temperature distribution 
     figure 
-    h=heatmap(T);  
-    h.Colormap=hot;
-    h.Title=salts(k); 
-    h.XLabel= 'Width'; 
-    h.YLabel='Height'; 
-    h.ColorbarVisible='on'; 
-    h.ColorLimits=[600 850];
+    ht=heatmap(y*1000,x*1000,T);
+    %ht.XData = num2str(x);
+    %ht.YData = num2str(y);
+    ht.Colormap=hot;
+    ht.Title=salts(k); 
+    ht.XLabel= 'Length (mm)'; 
+    ht.YLabel='Width (mm)'; 
+    ht.ColorbarVisible='on'; 
+    ht.ColorLimits=[600 850];
+    
+    
+    % deal with temp of center over time
+    T_t = [Ti,T_t(T_t>0)];
+    t = 0:dt:i*dt;
+    figure(4)
+    plot(t,T_t,linspec{k},'linewidth',2)
+    hold on
+    grid on
+    
     
     
 end
+
+figure(4)
+title('Center temperature over time')
+xlabel('Time (s)')
+ylabel('Temperature (K)')
+legend('Sodium Carbonate-Lithium Carbonate', 'Magnesium Chloride-Sodium Chloride ', 'Potasium Hydroxide','location','southeast')
 
 toc %end runtimer 
