@@ -237,7 +237,7 @@ for k = 1:length(rho_pcm)
     
     % deal with temp of center over time
     T_t = [Ti,T_t(T_t>0)];
-    t = 0:dt:i*dt;
+    t = 0:dt(k):i*dt(k);
     figure(4)
     plot(t,T_t,linspec{k},'linewidth',2)
     hold on
