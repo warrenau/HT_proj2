@@ -10,7 +10,7 @@ tic %begin runtimer
 width = 1*0.0254; % width in meters
 pcm_length = 2*0.0254; % length in meters
 height = 1*0.0254; % height of a brick in meters
-N =1;%15/height; % number of bricks in a stack
+N =15/height; % number of bricks in a stack
 dx = 1e-3; % delta x
 x = 0:dx:width; % x length in meters
 y = 0:dx:pcm_length; % y length in meters
@@ -23,7 +23,7 @@ mu_air = 377e-7; % air viscosity at 825 K in Pa s
 cp_air = 1.1045*1000; % air specific heat in J/kgK
 k_air = 58.45e-3; % air thermal conductivity in W/mK
 U_air = 10; % air velocity in m/s
-Re_air = rho_air * U_air * height / mu_air; % reynolds number of air
+Re_air = rho_air * U_air * height.*N / mu_air; % reynolds number of air
 Pr_air = 0.7125; % air prandtl number
 
 % PCM properties
@@ -217,6 +217,13 @@ for k = 1:length(rho_pcm)
             t_melt(k) = dt(k)*i;
             fprintf('Time to melt:%f s\n',t_melt(k))
             disp(i)
+            if k ==1
+                T1 = T;
+            elseif k==2
+                T2 = T;
+            elseif k==3
+                T3 = T;
+            end
             break
         end
     
